@@ -230,7 +230,7 @@ def extract_pdf_content_pymupdf(pdf_path):
 
 def analyze_image_for_durations(image_b64):
     try:
-        check_tpm_limit()
+        #check_tpm_limit()
         prompt = """
         Analyze this image for project timeline or Gantt chart information. Look for:
         1. Phase durations (PREP, EXPLORE, REALIZE, DEPLOY, RUN phases)
@@ -497,7 +497,7 @@ def safe_invoke(prompt, max_retries=2):
     retries = 0
     while retries < max_retries:
         try:
-            check_tpm_limit()
+            #check_tpm_limit()
             truncated_prompt = truncate_context(prompt, MAX_INPUT_TOKENS)
             input_tokens = count_tokens(truncated_prompt, model="gpt-4o")
             token_stats["llm_input_tokens"] += input_tokens
@@ -709,3 +709,4 @@ def create_excel_with_formatting(df, durations, output_file, activity_column_wid
             table_no.tableStyleInfo = style_no
 
             worksheet_no.add_table(table_no)
+
