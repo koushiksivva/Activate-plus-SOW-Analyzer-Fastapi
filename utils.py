@@ -1,16 +1,14 @@
 import fitz  # PyMuPDF
 import logging
 import re
-from pymongo import MongoClient
-from dotenv import load_dotenv
-import os
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill
 from openpyxl.utils import get_column_letter
 import pandas as pd
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from azure.cosmos import CosmosClient
 import openai
+from dotenv import load_dotenv
+import os
 
 # Configure logging
 logging.basicConfig(
@@ -25,17 +23,6 @@ logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
-
-# Cosmos DB configuration
-cosmos_endpoint = os.getenv("COSMOS_ENDPOINT")
-cosmos_key = os.getenv("COSMOS_KEY")
-database_name = os.getenv("COSMOS_DATABASE", "SOWDatabase")
-container_name = os.getenv("COSMOS_CONTAINER", "SOWDocuments")
-
-# Initialize Cosmos DB client
-cosmos_client = CosmosClient(cosmos_endpoint, credential=cosmos_key)
-database = cosmos_client.get_database_client(database_name)
-collection = database.get_container_client(container_name)
 
 # OpenAI configuration
 openai.api_type = "azure"
@@ -61,7 +48,7 @@ def process_pdf_safely(file_path):
                 pdf_text += page.get_text()
             normalized_pdf_text = normalize_and_clean_text(pdf_text)
             tmp_pdf_path = file_path  # Adjust if a temp copy is needed
-            images_content = []  # Implement image extraction if required
+            images_content = []  # Placeholder for image extraction if needed
             return pdf_text, normalized_pdf_text, tmp_pdf_path, images_content
     except Exception as e:
         logger.error(f"Error in process_pdf_safely: {str(e)}")
@@ -70,7 +57,6 @@ def process_pdf_safely(file_path):
 def extract_durations_optimized(text):
     """Extract phase durations from the text using regex."""
     durations = {}
-    # Example regex for duration patterns (adjust based on your SOW format)
     duration_pattern = r'(\d+)\s*(days|weeks|months)'
     matches = re.finditer(duration_pattern, text, re.IGNORECASE)
     for match in matches:
@@ -78,22 +64,6 @@ def extract_durations_optimized(text):
         unit = match.group(2)
         durations[f"Phase {len(durations) + 1}"] = f"{duration} {unit}"
     return durations
-
-def store_chunks_in_cosmos(chunks, images_content, document_id):
-    """Store text chunks and images in Cosmos DB."""
-    try:
-        for i, chunk in enumerate(chunks):
-            collection.upsert_item({
-                "id": f"{document_id}_chunk_{i}",
-                "document_id": document_id,
-                "content": chunk,
-                "image_data": images_content[i] if i < len(images_content) else None,
-                "created_at": pd.Timestamp.now().isoformat()
-            })
-        return True
-    except Exception as e:
-        logger.error(f"Error storing chunks in Cosmos DB: {str(e)}")
-        return False
 
 def process_batch_with_fallback(batch, document_id, durations, normalized_pdf_text, pdf_text):
     """Process a batch of tasks with fallback to default responses."""
@@ -159,4 +129,5 @@ def create_excel_with_formatting(df, durations, output_path, activity_column_wid
 
 def generate_document_id(text):
     """Generate a unique document ID based on text content."""
+    import uuid
     return str(uuid.uuid4())
