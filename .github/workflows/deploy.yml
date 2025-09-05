@@ -23,9 +23,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
  
-      - name: 'activate-plus-sow-analyzer'
+      - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v2
         with:
-          app-name: Build and deploy Python app to Azure Web App - activate-plus-sow-analyzer
+          app-name: 'activate-plus-sow-analyzer'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
           package: .
