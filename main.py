@@ -58,6 +58,7 @@ async def serve_frontend():
 
 async def process_pdf_background(task_id: str, file_path: str, filename: str):
     logger.info(f"Starting background processing for task_id: {task_id}, file: {filename}")
+    global tasks  # Declare tasks as global to modify the module-level dictionary
     try:
         tasks[task_id] = {'status': 'processing', 'excel_path': None, 'error': None}
 
