@@ -33,7 +33,7 @@ app = FastAPI(title="Project Plan Agent")
 # Mount static files for frontend
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# In-memory task status (replace with Redis or Cosmos DB for production)
+# In-memory task status
 tasks = {}  # task_id: {'status': 'processing'|'completed'|'failed', 'excel_path': str or None, 'error': str or None}
 
 class UploadResponse(BaseModel):
@@ -58,22 +58,21 @@ async def serve_frontend():
 
 async def process_pdf_background(task_id: str, file_path: str, filename: str):
     logger.info(f"Starting background processing for task_id: {task_id}, file: {filename}")
-    global tasks  # Declare tasks as global to modify the module-level dictionary
+    global tasks
     try:
+        logger.info(f"Checking file existence: {os.path.exists(file_path)}")
+        logger.info(f"Setting task {task_id} to processing")
         tasks[task_id] = {'status': 'processing', 'excel_path': None, 'error': None}
 
-        # Process PDF
         processing_result = process_pdf_safely(file_path)
         if processing_result is None:
             raise ValueError("No readable content found in the PDF")
 
         pdf_text, normalized_pdf_text, tmp_pdf_path, images_content = processing_result
 
-        # Extract durations
         logger.info("Extracting phase durations...")
         durations = extract_durations_optimized(pdf_text)
 
-        # Split text into chunks
         from langchain.text_splitter import RecursiveCharacterTextSplitter
         splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=50)
         chunks = splitter.split_text(pdf_text) if pdf_text.strip() else []
@@ -81,11 +80,9 @@ async def process_pdf_background(task_id: str, file_path: str, filename: str):
         if not chunks:
             raise ValueError("No valid text content to process")
 
-        # Generate document ID
         document_id = generate_document_id(pdf_text)
         logger.info(f"Processing document with ID: {document_id}")
 
-        # Store chunks in Cosmos DB
         logger.info("Storing document chunks...")
         success = store_chunks_in_cosmos(chunks, images_content, document_id)
         if not success:
@@ -94,7 +91,6 @@ async def process_pdf_background(task_id: str, file_path: str, filename: str):
         stored_count = collection.count_documents({"document_id": document_id})
         logger.info(f"Stored {stored_count} chunks in database")
 
-        # Process tasks
         logger.info("Analyzing tasks in SOW...")
         all_tasks = []
         for heading, tasks in task_batches.items():
@@ -106,11 +102,9 @@ async def process_pdf_background(task_id: str, file_path: str, filename: str):
         if not all_tasks:
             raise ValueError("No valid tasks found to process")
 
-        # Split into batches
         batch_size = 15
         task_batches_split = [all_tasks[i:i+batch_size] for i in range(0, len(all_tasks), batch_size)]
 
-        # Process batches
         from functools import partial
         from concurrent.futures import ThreadPoolExecutor
         process_fn = partial(
@@ -124,7 +118,6 @@ async def process_pdf_background(task_id: str, file_path: str, filename: str):
         with ThreadPoolExecutor(max_workers=2) as executor:
             results = list(executor.map(process_fn, task_batches_split))
 
-        # Merge results
         flat_rows = []
         for batch_result in results:
             if batch_result and isinstance(batch_result, list):
@@ -133,22 +126,19 @@ async def process_pdf_background(task_id: str, file_path: str, filename: str):
         if not flat_rows:
             raise ValueError("Failed to process any tasks")
 
-        # Create DataFrame
         import pandas as pd
         df = pd.DataFrame(flat_rows)
         df = df[df['Present'] != 'error']
         if df.empty:
             raise ValueError("All tasks failed processing")
 
-        # Generate Excel in a temporary file
         tmp_excel_path = f"/tmp/{task_id}.xlsx"
         create_excel_with_formatting(df, durations, tmp_excel_path, activity_column_width=50)
 
-        # Clean up temp PDF file
         if tmp_pdf_path and os.path.exists(tmp_pdf_path):
             os.unlink(tmp_pdf_path)
 
-        # Update task status
+        logger.info(f"Setting task {task_id} to completed")
         tasks[task_id] = {'status': 'completed', 'excel_path': tmp_excel_path, 'error': None}
         logger.info(f"Processing completed for task_id: {task_id}")
 
@@ -209,7 +199,6 @@ async def download_excel(task_id: str):
         background=BackgroundTask(lambda: os.unlink(excel_path) if os.path.exists(excel_path) else None)
     )
 
-    # Clean up task entry
     del tasks[task_id]
 
     return response
