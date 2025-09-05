@@ -3,9 +3,9 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.background import BackgroundTask
 from utils import (
-    process_pdf_safely, extract_durations_optimized, store_chunks_in_cosmos,
+    process_pdf_safely, extract_durations_optimized,
     process_batch_with_fallback, create_excel_with_formatting, generate_document_id,
-    task_batches, normalize_and_clean_text, collection
+    task_batches, normalize_and_clean_text
 )
 import os
 import logging
@@ -82,14 +82,6 @@ async def process_pdf_background(task_id: str, file_path: str, filename: str):
 
         document_id = generate_document_id(pdf_text)
         logger.info(f"Processing document with ID: {document_id}")
-
-        logger.info("Storing document chunks...")
-        success = store_chunks_in_cosmos(chunks, images_content, document_id)
-        if not success:
-            raise ValueError("Failed to store document in Cosmos DB")
-
-        stored_count = collection.count_documents({"document_id": document_id})
-        logger.info(f"Stored {stored_count} chunks in database")
 
         logger.info("Analyzing tasks in SOW...")
         all_tasks = []
