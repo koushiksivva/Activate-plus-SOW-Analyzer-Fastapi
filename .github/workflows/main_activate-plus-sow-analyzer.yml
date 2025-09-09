@@ -24,23 +24,23 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Create and start virtual environment
-        run: |
-          python -m venv venv
-          source venv/bin/activate
-      
-      - name: Install dependencies
+      # Create runtime.txt for Oryx (specifies Python version)
+      - name: Create runtime.txt
+        run: echo "python-3.10" > runtime.txt
+
+      - name: Install dependencies (for build validation/tests if needed)
         run: pip install -r requirements.txt
-        
-      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
+
+      # Zip the code (exclude venv, .git, etc.)
+      - name: Zip artifact
+        run: |
+          zip -r app.zip . -x "venv/*" ".git/*" "__pycache__/*" "*.pyc" "app.zip"
 
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: |
-            .
-            !venv/
+          path: app.zip
 
   deploy:
     runs-on: ubuntu-latest
@@ -51,11 +51,15 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: python-app
-      
+          path: .
+
+      - name: Unzip for deploy
+        run: unzip app.zip
+
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
           app-name: 'activate-plus-sow-analyzer'
-
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_2DA3C67FD5474884AF503EE734DB880C }}
+          package: './app.zip'  # Explicit zip for reliability
