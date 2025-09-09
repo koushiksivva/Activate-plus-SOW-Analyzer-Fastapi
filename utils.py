@@ -707,5 +707,4 @@ def create_excel_with_formatting(df, durations, output_file, activity_column_wid
             table_no = Table(displayName="MissingTasksTable", ref=worksheet_no.dimensions)
             style_no = TableStyleInfo(name="TableStyleMedium9", showRowStripes=True)
             table_no.tableStyleInfo = style_no
-
             worksheet_no.add_table(table_no)
