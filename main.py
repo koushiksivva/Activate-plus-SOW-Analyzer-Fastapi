@@ -150,6 +150,10 @@ async def upload_pdf(file: UploadFile = File(...)):
     except Exception as e:
         logger.error(f"Error processing PDF: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to process PDF: {str(e)}")
+        
+@app.get("/health") 
+async def health_check(): 
+    return {"status": "healthy"}
 
 if __name__ == "__main__":
     import uvicorn
