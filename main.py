@@ -1,9 +1,7 @@
-
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.background import BackgroundTask
-#from . import utils, task_batches
 from utils import (
     process_pdf_safely, extract_durations_optimized, store_chunks_in_cosmos,
     process_batch_with_fallback, create_excel_with_formatting, generate_document_id,
@@ -13,7 +11,6 @@ import os
 import logging
 import tempfile
 from dotenv import load_dotenv
-import asyncio
 
 # Configure logging
 logging.basicConfig(
@@ -33,6 +30,10 @@ app = FastAPI(title="Project Plan Agent")
 
 # Mount static files for frontend
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_frontend():
@@ -58,7 +59,7 @@ async def upload_pdf(file: UploadFile = File(...)):
         if processing_result is None:
             raise HTTPException(status_code=400, detail="No readable content found in the PDF")
 
-        pdf_text, normalized_pdf_text, tmp_pdf_path, images_content = await asyncio.to_thread(process_pdf_safely, file)
+        pdf_text, normalized_pdf_text, tmp_pdf_path, images_content = processing_result
 
         # Extract durations
         logger.info("Extracting phase durations...")
@@ -154,14 +155,6 @@ async def upload_pdf(file: UploadFile = File(...)):
         logger.error(f"Error processing PDF: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to process PDF: {str(e)}")
 
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy"}
-
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
-
-
-
