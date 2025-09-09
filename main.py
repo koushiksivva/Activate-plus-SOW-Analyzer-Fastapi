@@ -13,6 +13,7 @@ import os
 import logging
 import tempfile
 from dotenv import load_dotenv
+import asyncio
 
 # Configure logging
 logging.basicConfig(
@@ -57,7 +58,7 @@ async def upload_pdf(file: UploadFile = File(...)):
         if processing_result is None:
             raise HTTPException(status_code=400, detail="No readable content found in the PDF")
 
-        pdf_text, normalized_pdf_text, tmp_pdf_path, images_content = processing_result
+        pdf_text, normalized_pdf_text, tmp_pdf_path, images_content = await asyncio.to_thread(process_pdf_safely, file)
 
         # Extract durations
         logger.info("Extracting phase durations...")
@@ -111,7 +112,7 @@ async def upload_pdf(file: UploadFile = File(...)):
             pdf_text=pdf_text
         )
 
-        with ThreadPoolExecutor(max_workers=6) as executor:
+        with ThreadPoolExecutor(max_workers=2) as executor:
             results = list(executor.map(process_fn, task_batches_split))
 
         # Merge results
@@ -160,6 +161,7 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
 
