@@ -111,7 +111,7 @@ async def upload_pdf(file: UploadFile = File(...)):
             pdf_text=pdf_text
         )
 
-        with ThreadPoolExecutor(max_workers=2) as executor:
+        with ThreadPoolExecutor(max_workers=8) as executor:
             results = list(executor.map(process_fn, task_batches_split))
 
         # Merge results
@@ -156,3 +156,4 @@ async def upload_pdf(file: UploadFile = File(...)):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
