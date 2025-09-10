@@ -96,8 +96,11 @@ try:
         api_key=AZURE_OPENAI_API_KEY,
         model=AZURE_OPENAI_EMBEDDING_DEPLOYMENT
     )
-    test_embedding = embedding_model.embed_query("test")
-    logger.info("Azure OpenAI Embeddings connection test successful")
+    try:
+        test_embedding = embedding_model.embed_query("test")
+        logger.info("Azure OpenAI Embeddings connection test successful")
+    except Exception as e:
+        logger.warning(f"Azure OpenAI connection test failed: {e}")
 except Exception as e:
     logger.error(f"Failed to initialize Azure OpenAI Embeddings: {str(e)}")
     raise
@@ -106,8 +109,11 @@ try:
     client = MongoClient(COSMOS_URI)
     db = client[COSMOS_DB]
     collection = db[COSMOS_COLLECTION]
-    collection.count_documents({})
-    logger.info("Cosmos DB connection successful")
+    try:
+        collection.count_documents({})
+        logger.info("Cosmos DB connection successful")
+    except Exception as e:
+        logger.warning(f"Cosmos DB connection test failed: {e}")
 except Exception as e:
     logger.error(f"Failed to connect to Cosmos DB: {str(e)}")
     raise
@@ -708,3 +714,4 @@ def create_excel_with_formatting(df, durations, output_file, activity_column_wid
             style_no = TableStyleInfo(name="TableStyleMedium9", showRowStripes=True)
             table_no.tableStyleInfo = style_no
             worksheet_no.add_table(table_no)
+
