@@ -13,6 +13,8 @@ PyMuPDF==1.24.10
 python-Levenshtein==0.25.1
 python-multipart==0.0.9
 backoff==2.2.1
+azure-cosmos
+
 
 
 
