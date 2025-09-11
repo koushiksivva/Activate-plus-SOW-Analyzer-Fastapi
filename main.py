@@ -96,7 +96,7 @@ async def upload_pdf(file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail="No valid tasks found to process")
 
         # Split into batches
-        batch_size = 15
+        batch_size = 5
         task_batches_split = [all_tasks[i:i+batch_size] for i in range(0, len(all_tasks), batch_size)]
 
         # Process batches
@@ -158,4 +158,5 @@ async def health_check():
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
