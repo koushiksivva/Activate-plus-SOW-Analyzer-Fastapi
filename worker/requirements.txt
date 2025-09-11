@@ -1,0 +1,8 @@
+azure-storage-queue
+pymongo
+pandas
+PyMuPDF
+fuzzywuzzy
+python-dotenv
+langchain-openai
+tiktoken

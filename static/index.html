@@ -48,7 +48,7 @@
         </div>
     </div>
     <script>
-       document.getElementById('upload-form').addEventListener('submit', async (event) => {
+        document.getElementById('upload-form').addEventListener('submit', async (event) => {
             event.preventDefault();
             const fileInput = document.getElementById('pdf-file');
             const statusDiv = document.getElementById('status');
@@ -59,7 +59,7 @@
                 return;
             }
 
-            statusDiv.innerHTML = '<p>Processing PDF...</p>';
+            statusDiv.innerHTML = '<p>Uploading PDF...</p>';
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
 
@@ -69,28 +69,37 @@
                     body: formData
                 });
 
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
+                if (response.status === 202) {
+                    const { job_id } = await response.json();
+                    statusDiv.innerHTML = '<p>Processing started... please wait ⏳</p>';
 
-                    // ✅ Update the download link
-                    const downloadLink = document.getElementById('download-link');
-                    downloadLink.href = url;
-                    downloadLink.download = 'AI-Generated_SOW_Document.xlsx';
+                    // Poll job status every 5s
+                    const pollInterval = setInterval(async () => {
+                        const res = await fetch(`/job-status/${job_id}`);
+                        const data = await res.json();
 
-                    statusDiv.innerHTML = '<p>Processing complete! Click below to download.</p>';
-                    downloadFeedbackContainer.style.display = 'flex';
+                        if (data.status === "finished") {
+                            clearInterval(pollInterval);
+                            const downloadLink = document.getElementById('download-link');
+                            downloadLink.href = `/download/${job_id}`;
+                            downloadLink.download = `AI-Generated_SOW_Document.xlsx`;
+
+                            statusDiv.innerHTML = '<p>Processing complete! Click below to download.</p>';
+                            downloadFeedbackContainer.style.display = 'flex';
+                        } else if (data.status === "failed") {
+                            clearInterval(pollInterval);
+                            statusDiv.innerHTML = '<p style="color:red;">Processing failed. Please try again.</p>';
+                        }
+                    }, 5000);
                 } else {
                     const text = await response.text();
                     statusDiv.innerHTML = `<p style="color: red;">Error: ${response.status} - ${text || 'Unknown error'}</p>`;
-                    console.error('Response text:', text);
                 }
             } catch (error) {
                 statusDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
-                console.error('Fetch error:', error);
             }
         });
-  </script>
+    </script>
 </body>
 
 </html>
