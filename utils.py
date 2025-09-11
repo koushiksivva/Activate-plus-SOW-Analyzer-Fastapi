@@ -34,8 +34,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler('app.log')
+        logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
@@ -714,4 +713,5 @@ def create_excel_with_formatting(df, durations, output_file, activity_column_wid
             style_no = TableStyleInfo(name="TableStyleMedium9", showRowStripes=True)
             table_no.tableStyleInfo = style_no
             worksheet_no.add_table(table_no)
+
 
