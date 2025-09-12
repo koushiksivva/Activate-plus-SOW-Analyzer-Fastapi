@@ -26,7 +26,7 @@
             <h2>Upload Statement of Work (SOW) PDF</h2>
             <form id="upload-form" enctype="multipart/form-data">
                 <input type="file" id="pdf-file" name="file" accept=".pdf" required />
-                <button type="submit">Upload and Process</button>
+                <button type="submit" id="upload-button">Upload and Process</button>
             </form>
             <div id="status" class="status"></div>
         </div>
@@ -42,15 +42,19 @@
     <script>
         document.getElementById('upload-form').addEventListener('submit', async (event) => {
             event.preventDefault();
+
             const fileInput = document.getElementById('pdf-file');
             const statusDiv = document.getElementById('status');
             const downloadFeedbackContainer = document.querySelector('.download-feedback-container');
+            const downloadLink = document.getElementById('download-link');
+            const uploadButton = document.getElementById('upload-button');
 
             if (!fileInput.files.length) {
                 statusDiv.innerHTML = '<p style="color: red;">Please select a PDF file.</p>';
                 return;
             }
 
+            uploadButton.disabled = true; // Disable the button
             statusDiv.innerHTML = '<p>Uploading PDF...</p>';
 
             const formData = new FormData();
@@ -65,21 +69,18 @@
                 if (response.ok) {
                     const blob = await response.blob();
                     const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = "AI-Generated_SOW_Document.xlsx";
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    window.URL.revokeObjectURL(url);
-
-                    statusDiv.innerHTML = '<p>Download started! 📥</p>';
+                    downloadLink.href = url;
+                    downloadLink.download = "AI-Generated_SOW_Document.xlsx";
+                    statusDiv.innerHTML = '<p>Processing complete! Click below to download.</p>';
+                    downloadFeedbackContainer.style.display = 'flex';
                 } else {
                     const text = await response.text();
                     statusDiv.innerHTML = `<p style="color: red;">Error: ${response.status} - ${text || 'Unknown error'}</p>`;
                 }
             } catch (error) {
                 statusDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            } finally {
+                uploadButton.disabled = false; // Re-enable the button
             }
         });
     </script>
