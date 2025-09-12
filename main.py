@@ -43,7 +43,6 @@ async def upload_pdf(file: UploadFile = File(...)):
         if not file.filename.endswith(".pdf"):
             raise HTTPException(status_code=400, detail="Only PDF files are allowed")
 
-        # Process PDF asynchronously
         loop = asyncio.get_event_loop()
         processing_result = await loop.run_in_executor(None, lambda: process_pdf_safely(file))
         if processing_result is None:
@@ -56,14 +55,12 @@ async def upload_pdf(file: UploadFile = File(...)):
         from langchain.text_splitter import RecursiveCharacterTextSplitter
         splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=50)
         chunks = splitter.split_text(pdf_text) if pdf_text.strip() else []
-
         if not chunks:
             raise HTTPException(status_code=400, detail="No valid text content to process")
 
         document_id = generate_document_id(pdf_text)
         logger.info(f"Processing document with ID: {document_id}")
 
-        # Store chunks in Cosmos DB
         success = await loop.run_in_executor(None, lambda: store_chunks_in_cosmos(chunks, images_content, document_id))
         if not success:
             raise HTTPException(status_code=500, detail="Failed to store document in Cosmos DB")
@@ -71,7 +68,6 @@ async def upload_pdf(file: UploadFile = File(...)):
         stored_count = collection.count_documents({"document_id": document_id})
         logger.info(f"Stored {stored_count} chunks in database")
 
-        # Process tasks
         logger.info("Analyzing tasks in SOW...")
         all_tasks = [(str(heading), str(task)) for heading, tasks in task_batches.items() for task in tasks if task and task.strip()]
         if not all_tasks:
@@ -80,8 +76,14 @@ async def upload_pdf(file: UploadFile = File(...)):
         batch_size = 15
         task_batches_split = [all_tasks[i:i + batch_size] for i in range(0, len(all_tasks), batch_size)]
 
-        # Sequentially process batches one by one
         results = []
+
+        # Define process_batch function here
+        async def process_batch(batch):
+            return await loop.run_in_executor(None, lambda: process_batch_with_fallback(
+                batch, document_id, durations, normalized_pdf_text, pdf_text
+            ))
+
         for idx, batch in enumerate(task_batches_split):
             logger.info(f"Processing batch {idx + 1} of {len(task_batches_split)}")
             result = await process_batch(batch)
@@ -89,7 +91,6 @@ async def upload_pdf(file: UploadFile = File(...)):
                 results.append(result)
 
         flat_rows = [row for result in results for row in result if result and isinstance(result, list)]
-
         if not flat_rows:
             raise HTTPException(status_code=500, detail="Failed to process any tasks")
 
@@ -125,3 +126,4 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
