@@ -34,7 +34,8 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.StreamHandler()
+        logging.StreamHandler(),
+        logging.FileHandler('app.log')
     ]
 )
 logger = logging.getLogger(__name__)
@@ -95,11 +96,8 @@ try:
         api_key=AZURE_OPENAI_API_KEY,
         model=AZURE_OPENAI_EMBEDDING_DEPLOYMENT
     )
-    try:
-        test_embedding = embedding_model.embed_query("test")
-        logger.info("Azure OpenAI Embeddings connection test successful")
-    except Exception as e:
-        logger.warning(f"Azure OpenAI connection test failed: {e}")
+    test_embedding = embedding_model.embed_query("test")
+    logger.info("Azure OpenAI Embeddings connection test successful")
 except Exception as e:
     logger.error(f"Failed to initialize Azure OpenAI Embeddings: {str(e)}")
     raise
@@ -108,11 +106,8 @@ try:
     client = MongoClient(COSMOS_URI)
     db = client[COSMOS_DB]
     collection = db[COSMOS_COLLECTION]
-    try:
-        collection.count_documents({})
-        logger.info("Cosmos DB connection successful")
-    except Exception as e:
-        logger.warning(f"Cosmos DB connection test failed: {e}")
+    collection.count_documents({})
+    logger.info("Cosmos DB connection successful")
 except Exception as e:
     logger.error(f"Failed to connect to Cosmos DB: {str(e)}")
     raise
@@ -458,11 +453,11 @@ INSTRUCTIONS:
 OUTPUT ONLY:
 {{
     "durations": {{
-        "PREP": "X months/weeks",
-        "EXPLORE": "X months/weeks",
-        "REALIZE": "X months/weeks",
-        "DEPLOY": "X months/weeks",
-        "RUN": "X months/weeks"
+        "PREP": "X weeks",
+        "EXPLORE": "X weeks",
+        "REALIZE": "X weeks",
+        "DEPLOY": "X weeks",
+        "RUN": "X weeks"
     }}
 }}
 """)
@@ -713,5 +708,4 @@ def create_excel_with_formatting(df, durations, output_file, activity_column_wid
             style_no = TableStyleInfo(name="TableStyleMedium9", showRowStripes=True)
             table_no.tableStyleInfo = style_no
             worksheet_no.add_table(table_no)
-
 
