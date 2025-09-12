@@ -453,11 +453,11 @@ INSTRUCTIONS:
 OUTPUT ONLY:
 {{
     "durations": {{
-        "PREP": "X months/weeks",
-        "EXPLORE": "X months/weeks",
-        "REALIZE": "X months/weeks",
-        "DEPLOY": "X months/weeks",
-        "RUN": "X months/weeks"
+        "PREP": "X weeks",
+        "EXPLORE": "X weeks",
+        "REALIZE": "X weeks",
+        "DEPLOY": "X weeks",
+        "RUN": "X weeks"
     }}
 }}
 """)
@@ -708,3 +708,4 @@ def create_excel_with_formatting(df, durations, output_file, activity_column_wid
             style_no = TableStyleInfo(name="TableStyleMedium9", showRowStripes=True)
             table_no.tableStyleInfo = style_no
             worksheet_no.add_table(table_no)
+
