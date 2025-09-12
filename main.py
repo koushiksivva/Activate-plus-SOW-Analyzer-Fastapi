@@ -5,7 +5,7 @@ from starlette.background import BackgroundTask
 from utils import (
     process_pdf_safely, extract_durations_optimized, store_chunks_in_cosmos,
     process_batch_with_fallback, create_excel_with_formatting, generate_document_id,
-    task_batches, normalize_and_clean_text
+    task_batches, normalize_and_clean_text, collection
 )
 import os
 import logging
@@ -125,3 +125,4 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
