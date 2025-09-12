@@ -80,14 +80,14 @@ async def upload_pdf(file: UploadFile = File(...)):
         batch_size = 15
         task_batches_split = [all_tasks[i:i + batch_size] for i in range(0, len(all_tasks), batch_size)]
 
-        # Process batches asynchronously
-        async def process_batch(batch):
-            return await loop.run_in_executor(None, lambda: process_batch_with_fallback(
-                batch, document_id, durations, normalized_pdf_text, pdf_text
-            ))
+        # Sequentially process batches one by one
+        results = []
+        for idx, batch in enumerate(task_batches_split):
+            logger.info(f"Processing batch {idx + 1} of {len(task_batches_split)}")
+            result = await process_batch(batch)
+            if result:
+                results.append(result)
 
-        tasks = [process_batch(batch) for batch in task_batches_split]
-        results = await asyncio.gather(*tasks)
         flat_rows = [row for result in results for row in result if result and isinstance(result, list)]
 
         if not flat_rows:
