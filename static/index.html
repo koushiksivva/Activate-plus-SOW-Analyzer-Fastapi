@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Project Plan Agent</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
     <div class="logo-container">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/6/67/Logo_Global_NTT_DATA_Future_Blue_RGB.png" alt="NTT DATA Logo" width="300">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/6/67/Logo_Global_NTT_DATA_Future_Blue_RGB.png" alt="NTT DATA Logo" width="300" />
     </div>
     <div class="container">
         <div class="header">
@@ -25,26 +25,18 @@
         <div class="content">
             <h2>Upload Statement of Work (SOW) PDF</h2>
             <form id="upload-form" enctype="multipart/form-data">
-                <input type="file" id="pdf-file" name="file" accept=".pdf" required>
+                <input type="file" id="pdf-file" name="file" accept=".pdf" required />
                 <button type="submit">Upload and Process</button>
             </form>
             <div id="status" class="status"></div>
-            <!-- <div class="download-feedback-container" style="display: none;">
-                <div id="download-section" class="download-section">
-                    <a id="download-link" class="download-btn">📥 Download Excel File</a>
-                </div>
-                <div id="feedback-section" class="feedback-section">
-                    <a href="https://forms.microsoft.com/e/ngwFzP8MrG" target="_blank" rel="noopener noreferrer" class="feedback-btn">📝 Submit Feedback</a>
-                </div>
-            </div> -->
         </div>
         <div class="download-feedback-container" style="display: none;">
-                <div id="download-section" class="download-section">
-                    <a id="download-link" class="download-btn">📥 Download Excel File</a>
-                </div>
-                <div id="feedback-section" class="feedback-section">
-                    <a href="https://forms.microsoft.com/e/ngwFzP8MrG" target="_blank" rel="noopener noreferrer" class="feedback-btn">📝 Submit Feedback</a>
-                </div>
+            <div id="download-section" class="download-section">
+                <a id="download-link" class="download-btn">📥 Download Excel File</a>
+            </div>
+            <div id="feedback-section" class="feedback-section">
+                <a href="https://forms.microsoft.com/e/ngwFzP8MrG" target="_blank" rel="noopener noreferrer" class="feedback-btn">📝 Submit Feedback</a>
+            </div>
         </div>
     </div>
     <script>
@@ -60,6 +52,7 @@
             }
 
             statusDiv.innerHTML = '<p>Uploading PDF...</p>';
+
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
 
@@ -69,28 +62,18 @@
                     body: formData
                 });
 
-                if (response.status === 202) {
-                    const { job_id } = await response.json();
-                    statusDiv.innerHTML = '<p>Processing started... please wait ⏳</p>';
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = "AI-Generated_SOW_Document.xlsx";
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
 
-                    // Poll job status every 5s
-                    const pollInterval = setInterval(async () => {
-                        const res = await fetch(`/job-status/${job_id}`);
-                        const data = await res.json();
-
-                        if (data.status === "finished") {
-                            clearInterval(pollInterval);
-                            const downloadLink = document.getElementById('download-link');
-                            downloadLink.href = `/download/${job_id}`;
-                            downloadLink.download = `AI-Generated_SOW_Document.xlsx`;
-
-                            statusDiv.innerHTML = '<p>Processing complete! Click below to download.</p>';
-                            downloadFeedbackContainer.style.display = 'flex';
-                        } else if (data.status === "failed") {
-                            clearInterval(pollInterval);
-                            statusDiv.innerHTML = '<p style="color:red;">Processing failed. Please try again.</p>';
-                        }
-                    }, 5000);
+                    statusDiv.innerHTML = '<p>Download started! 📥</p>';
                 } else {
                     const text = await response.text();
                     statusDiv.innerHTML = `<p style="color: red;">Error: ${response.status} - ${text || 'Unknown error'}</p>`;
@@ -101,5 +84,4 @@
         });
     </script>
 </body>
-
 </html>
